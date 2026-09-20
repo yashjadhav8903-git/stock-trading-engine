@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trading Engine Live Feed</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 30px;
+        }
+        .status-box {
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .price-box {
+            font-size: 28px;
+            color: #00ff00;
+            margin: 20px 0;
+        }
+        ul {
+            list-style-type: square;
+            color: #00e5ff;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        hr {
+            border-color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<h2>🚀 Live Ticker Feed (APPLE)</h2>
+<div id="status" class="status-box" style="color: yellow;">STATUS: CONNECTING...</div>
+
+<hr>
+
+<div class="price-box">
+    Live Price: <span id="price">--.--</span>
+</div>
+
+<hr>
+
+<h3>🔔 My Private Order Notifications:</h3>
+<ul id="notifications"></ul>
+
+<script type="text/javascript">
+    var stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/ws-trading-sockjs');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('STOMP Connected: ' + frame);
+            document.getElementById('status').innerText = 'STATUS: CONNECTED TO STOMP BROKER';
+            document.getElementById('status').style.color = '#00ff00';
+
+            // 1. Live Ticker Public Channel Subscription
+            stompClient.subscribe('/topic/ticker/APPLE', function (message) {
+                console.log("RECEIVED TICKER:", message.body);
+                var cleanPrice = message.body.replace(/"/g, '').replace(/\\/g, '').trim();
+                document.getElementById('price').innerText = '₹ ' + cleanPrice;
+            });
+
+            // 2. Private User Order Notifications (User ID: 1)
+            // 2. Private User Order Notifications (User ID: 1)
+            stompClient.subscribe('/queue/orders/1', function (message) {
+                console.log("RECEIVED PRIVATE NOTIFICATION RAW:", message.body);
+
+                let data;
+                try {
+                    data = typeof message.body === 'string' ? JSON.parse(message.body) : message.body;
+                } catch (e) {
+                    data = message.body;
+                }
+
+                const node = document.createElement("LI");
+                let textContent = "";
+
+                if (typeof data === 'object' && data !== null) {
+                    textContent = "[" + new Date().toLocaleTimeString() + "] Order #" + (data.orderId || 'N/A') +
+                        " (" + (data.orderType || 'TRADE') + ") " + (data.quantity || '') + " qty @ ₹" + (data.price || '');
+                } else {
+                    textContent = "[" + new Date().toLocaleTimeString() + "] " + data;
+                }
+
+                node.appendChild(document.createTextNode(textContent));
+                document.getElementById("notifications").appendChild(node);
+            });
+
+        }, function (error) {
+            console.error('STOMP Error:', error);
+            document.getElementById('status').innerText = 'STATUS: DISCONNECTED (RETRYING...)';
+            document.getElementById('status').style.color = '#ff0000';
+            setTimeout(connect, 3000);
+        });
+    }
+
+    // Auto-connect on page load
+    connect();
+</script>
+</body>
+</html>
