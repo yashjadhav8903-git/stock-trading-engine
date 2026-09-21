@@ -3,6 +3,7 @@ package com.tradingEngine.stockTrade.service;
 import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OpenOrderResponseDTO;
 import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OrderModifyRequestDTO;
 import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OrderRequestDTO;
+import com.tradingEngine.stockTrade.DTOs.Page.PageResponse;
 import com.tradingEngine.stockTrade.Locks.SymbolLockRegistry;
 import com.tradingEngine.stockTrade.bookOrderEngine.OrderBook;
 import com.tradingEngine.stockTrade.enums.ExecutionType;
@@ -20,6 +21,7 @@ import com.tradingEngine.stockTrade.repository.StockRepository;
 import com.tradingEngine.stockTrade.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -360,6 +362,7 @@ public class OrderService {
     }
 
 
+    @Cacheable(value = "userOrders", key = "#userId")
     @Transactional(readOnly = true)
     public List<OpenOrderResponseDTO> getOrders(Long userId){
 
@@ -387,6 +390,41 @@ public class OrderService {
         dto.setExecutionType(order.getExecutionType());
         dto.setCreatedAt(order.getCreatedAt());
 
+        log.info("Order data returned service layer to DTO. userId {} ", order.getUserId());
+
+        return dto;
+    }
+
+
+
+    @Transactional(readOnly = true)
+    public PageResponse<OpenOrderResponseDTO> findOrdersInfo(Integer page, Integer pageSize){
+        return orderRepository.findOrdersInfo(page, pageSize);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "OpenOrderInfoByUserId", key = "#userId")
+    public List<OpenOrderResponseDTO> getOpenOrderResponseByUserId(Long userId){
+        return orderRepository.getOpenOrderResponseByUserId(userId)
+                .stream()
+                .map(this::dtoToDTO)
+                .toList();
+
+    }
+
+    private OpenOrderResponseDTO dtoToDTO(Order order){
+        OpenOrderResponseDTO dto = new OpenOrderResponseDTO();
+
+        dto.setOrderId(order.getId());
+        dto.setUserId(order.getUserId());
+        dto.setPrice(order.getPrice());
+        dto.setSymbol(order.getSymbol().toUpperCase());
+        dto.setQuantity(order.getQuantity());
+        dto.setPrice(order.getPrice());
+        dto.setOrderStatus(order.getOrderStatus());
+        dto.setOrderType(order.getOrderType());
+        dto.setExecutionType(order.getExecutionType());
+        dto.setCreatedAt(order.getCreatedAt());
         log.info("Order data returned service layer to DTO. userId {} ", order.getUserId());
 
         return dto;

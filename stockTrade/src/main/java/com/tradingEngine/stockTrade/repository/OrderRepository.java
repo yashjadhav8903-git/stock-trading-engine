@@ -1,5 +1,7 @@
 package com.tradingEngine.stockTrade.repository;
 
+import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OpenOrderResponseDTO;
+import com.tradingEngine.stockTrade.DTOs.Page.PageResponse;
 import com.tradingEngine.stockTrade.Mapper.OrderRowMapper;
 import com.tradingEngine.stockTrade.enums.OrderStatus;
 import com.tradingEngine.stockTrade.model.Order;
@@ -201,5 +203,80 @@ public class OrderRepository {
         """;
 
         return jdbcTemplate.update(sql,price,quantity,orderId);
+    }
+
+
+    public List<Order> getOpenOrderResponseByUserId(Long userId){
+
+        String sql = """
+                select
+                id,
+                user_id,
+                symbol,
+                quantity,
+                price,
+                order_type,
+                execution_type,
+                order_status,
+                created_at
+                from orders
+                where user_id = ?
+        """;
+
+
+        List<Order> query = jdbcTemplate.query(sql,
+                orderRowMapper,
+                userId);
+
+        log.info("Data Come from Database UserId is : {}", userId);
+
+        return query;
+
+    }
+
+
+
+
+    public PageResponse<OpenOrderResponseDTO>  findOrdersInfo(Integer page, Integer pageSize){
+
+        // 1. Calculate offset
+        int offSet = page * pageSize;
+
+        // 2. Fetch total records count for this user
+        String CountSql = """
+                select
+                count(*)
+                from orders
+        """;
+
+        Long totalElements = jdbcTemplate.queryForObject(CountSql,Long.class);
+
+        if(totalElements == null || totalElements == 0){
+            return new PageResponse<>(List.of(),page,pageSize,0);
+        }
+
+        // 3. Fetch paginated records sorted by latest created_at
+        String dataSql = """
+                select
+                id,symbol,quantity,price,order_type,execution_type,order_status,created_at
+                from orders
+                order by created_at desc
+                limit ? offset ?
+        """;
+
+        List<OpenOrderResponseDTO> orders = jdbcTemplate.query(
+                dataSql,
+                (rs,rowNum) -> new OpenOrderResponseDTO(
+                        rs.getLong("id"),
+                        rs.getString("symbol"),
+                        rs.getBigDecimal("price"),
+                        rs.getString("order_type"),
+                        rs.getString("execution_type"),
+                        rs.getString("order_status"),
+                        rs.getTimestamp("created_at").toLocalDateTime()
+                ),
+                pageSize,offSet
+        );
+        return new PageResponse<>(orders,page,pageSize,totalElements.intValue());
     }
 }

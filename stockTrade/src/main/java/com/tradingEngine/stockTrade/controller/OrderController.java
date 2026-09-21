@@ -3,6 +3,7 @@ package com.tradingEngine.stockTrade.controller;
 import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OpenOrderResponseDTO;
 import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OrderModifyRequestDTO;
 import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OrderRequestDTO;
+import com.tradingEngine.stockTrade.DTOs.Page.PageResponse;
 import com.tradingEngine.stockTrade.service.OrderService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -67,7 +68,7 @@ public class OrderController {
 
 
     @GetMapping("/open")
-    public ResponseEntity<List<OpenOrderResponseDTO>> getOpenOrder(@RequestParam long userId){
+    public ResponseEntity<List<OpenOrderResponseDTO>> getOpenOrder(@RequestParam Long userId){
 
         log.info("Open-Order Request Enter ORDER Controller | UserId : {}",userId);
 
@@ -76,5 +77,18 @@ public class OrderController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(orders);
+    }
+
+    @GetMapping("/orderInfo")
+    public ResponseEntity<PageResponse<OpenOrderResponseDTO>> getOpenOrders(@RequestParam(defaultValue = "0") int page,
+                                                                            @RequestParam(defaultValue = "10") int pageSize){
+        PageResponse<OpenOrderResponseDTO> ordersInfo = orderService.findOrdersInfo(page, pageSize);
+        return ResponseEntity.ok(ordersInfo);
+
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<OpenOrderResponseDTO>> getOpenOrderResponseByUserId(@RequestParam Long userId){
+        return ResponseEntity.ok(orderService.getOpenOrderResponseByUserId(userId));
     }
 }

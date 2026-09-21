@@ -24,7 +24,9 @@ public class Stock {
     }
 
     public void setSymbol(String symbol) {
-        this.symbol = symbol;
+        if(symbol != null){
+            this.symbol = symbol.trim().toUpperCase();
+        }
     }
 
     public String getCompanyName() {

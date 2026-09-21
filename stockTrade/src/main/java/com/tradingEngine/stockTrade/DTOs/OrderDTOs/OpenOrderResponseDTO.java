@@ -19,6 +19,18 @@ public class OpenOrderResponseDTO {
     private ExecutionType executionType;
     private LocalDateTime createdAt;
 
+    public OpenOrderResponseDTO(long id, String symbol, BigDecimal price, String orderType, String executionType, String orderStatus, LocalDateTime createdAt) {
+        this.orderId = id;
+        this.UserId = id;
+        this.symbol = symbol;
+        this.price = price;
+        this.orderType = OrderType.valueOf(orderType);
+        this.executionType = ExecutionType.valueOf(executionType);
+        this.orderStatus = OrderStatus.valueOf(orderStatus);
+        this.createdAt = createdAt;
+    }
+    public OpenOrderResponseDTO() {}
+
     public Long getOrderId() {
         return orderId;
     }
