@@ -1,8 +1,6 @@
 package com.tradingEngine.stockTrade.matchingEngine;
 
-import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OrderNotificationDTO;
 import com.tradingEngine.stockTrade.Locks.SymbolLockRegistry;
-//import com.tradingEngine.stockTrade.Redis.RedisPublisher;
 import com.tradingEngine.stockTrade.Redis.RedisService;
 import com.tradingEngine.stockTrade.bookOrderEngine.OrderBook;
 import com.tradingEngine.stockTrade.enums.ExecutionType;
@@ -21,7 +19,6 @@ import com.tradingEngine.stockTrade.service.TradeBatchProcessor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -41,7 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *      Update Orders
  *          |
  *      Update Portfolio
- *
+ * <p>
  *      Ab MARKET cases:
  * MARKET BUY vs LIMIT SELL  --> Trade price: sell price
  * LIMIT BUY vs MARKET SELL  --> Trade price : buy price  --> dono me trade hamesha limit pr hoga ❤️
@@ -58,23 +55,21 @@ public class MatchingLogic {
     private final UserRepository userRepository;
     private final StockRepository stockRepository;
     private final HoldingRepository holdingRepository;
-    private final SimpMessagingTemplate simpMessagingTemplate;
     private final RedisService redisService;
 //    private final RedisPublisher redisPublisher;
     private final SymbolLockRegistry symbolLockRegistry;
 
 
     public MatchingLogic(TradeBatchProcessor tradeBatchProcessor,OrderRepository orderRepository,UserRepository userRepository,StockRepository stockRepository,
-                         HoldingRepository holdingRepository,SimpMessagingTemplate simpMessagingTemplate,RedisService redisService,
+                         HoldingRepository holdingRepository,RedisService redisService,
                          SymbolLockRegistry symbolLockRegistry) {
         this.tradeBatchProcessor = tradeBatchProcessor;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.stockRepository = stockRepository;
         this.holdingRepository = holdingRepository;
-        this.simpMessagingTemplate = simpMessagingTemplate;
+
         this.redisService = redisService;
-//        this.redisPublisher = redisPublisher;
         this.symbolLockRegistry = symbolLockRegistry;
     }
 
@@ -221,64 +216,28 @@ public class MatchingLogic {
 
         // 1. Settlement: Buyer Cash Deduct (Reserved Balance se)
         userRepository.deductReservedCash(bestBuyOrder.getUserId(), tradeAmount);
-
         // 2. Seller ke account mein cash credit karo
         userRepository.addCash(bestSellOrder.getUserId(), tradeAmount);
-
         // 3. Stock Transfer
         // Buyer ko stock do
         holdingRepository.addOrUpdateHolding(bestBuyOrder.getUserId(),bestBuyOrder.getSymbol(),TradeQuantity,tradePrice);
-
         // Seller ka locked stock minus karo
         holdingRepository.deductReservedStock(bestSellOrder.getUserId(),bestSellOrder.getSymbol(),TradeQuantity);
-
         // 4. Real-Time LTP Update in DB // -> LTP Real-time Update: Trade execute hote hi stocks.current_price ko updated traded price par persist karna.
         stockRepository.updateCurrentPrice(bestBuyOrder.getSymbol(), tradePrice);
 
         log.info("TRADE EXECUTED: Symbol {} | Qty {} @ Price {} | LTP Updated!",
                 bestBuyOrder.getSymbol(), TradeQuantity, tradePrice);
 
-        // Publish to Redis Channel -> ke liye 😅
-//        String symbol = bestBuyOrder.getSymbol();
-
         // REDIS FAST CACHE UPDATE:
         redisService.updateLTP(bestBuyOrder.getSymbol(), tradePrice);
-
-//        // 2. Publish to Redis Channel
-//        redisPublisher.publish("ticker." + symbol, tradePrice.toString());
-//
-//        // 2. Buyer Private Notification
-//        OrderNotificationDTO buyerNotification = new OrderNotificationDTO(
-//                bestBuyOrder.getUserId(),
-//                symbol,
-//                "BUY",
-//                TradeQuantity,
-//                tradePrice,
-//                "FILLED",
-//                "Order executed successfully!"
-//        );
-//        redisPublisher.publish("orders." + bestBuyOrder.getUserId(), buyerNotification);
-//
-//        // 3. Seller Private Notification
-//        OrderNotificationDTO sellerNotification = new OrderNotificationDTO(
-//                bestSellOrder.getUserId(),
-//                symbol,
-//                "SELL",
-//                TradeQuantity,
-//                tradePrice,
-//                "FILLED",
-//                "Order executed successfully!"
-//        );
-//        redisPublisher.publish("orders." + bestSellOrder.getUserId(), sellerNotification);
-
 
         // trade Object / trade creation
         Trade trade = getTrade(bestBuyOrder,bestSellOrder);
         trade.setPrice(tradePrice);
         trade.setQuantity(TradeQuantity);
 
-        log.info("Trade Executed| Trade Created and Data Added | Thread : tradePrice {} 💸, and quantity {} ", tradePrice, TradeQuantity);
-
+        log.info("Trade Executed | Trade Created and Data Added | Thread : tradePrice {} 💸, and quantity {} ", tradePrice, TradeQuantity);
 
         // Remaining Quantity
         // buyer

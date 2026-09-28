@@ -147,6 +147,21 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    @ExceptionHandler(RefreshTokenNotFound.class)
+    public ResponseEntity<ExceptionResponse> handleRefreshTokenNotFound(RefreshTokenNotFound ex,
+                                                                        HttpServletRequest request) {
+        ExceptionResponse errorResponse = new ExceptionResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponse> handleException(Exception ex,
                                                              HttpServletRequest request) {

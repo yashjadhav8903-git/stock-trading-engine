@@ -1,5 +1,6 @@
 package com.tradingEngine.stockTrade.repository;
 
+import com.tradingEngine.stockTrade.enums.UserStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -41,14 +42,14 @@ public class UserRepository {
     }
 
     // Deduct reserved cash after successful trade match
-    public int deductReservedCash(Long userId, BigDecimal amount){
+    public void deductReservedCash(Long userId, BigDecimal amount){
         String sql = """
                 update users
                 set reserved_balance = reserved_balance - ?
                 where id = ? and reserved_balance >= ?
         """;
 
-        return jdbcTemplate.update(sql,amount,userId,amount);
+        jdbcTemplate.update(sql, amount, userId, amount);
     }
 
     // Add cash to seller account
@@ -58,6 +59,17 @@ public class UserRepository {
                 set cash_balance = cash_balance + ?
                 where id = ?
         """;
-        return jdbcTemplate.update(sql,amount,userId);
+        return jdbcTemplate.update(sql, amount, userId);
     }
+
+    public int statusUpdate(Long userId, UserStatus userStatus){
+        String sql = """
+                update users
+                set status = ?,
+                where id = ?
+        """;
+        return jdbcTemplate.update(sql, userStatus.name(), userId);
+    }
+
+
 }

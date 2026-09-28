@@ -1,74 +1,58 @@
 package com.tradingEngine.stockTrade.model;
 
+import com.tradingEngine.stockTrade.enums.AuthenticationType;
+import com.tradingEngine.stockTrade.enums.UserStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
-public class User {
+@Entity
+@Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@Table(name = "users")
+public class User implements UserDetails {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
     private String username;
-    private String email;
+
+    @Column(nullable = true)
     private String password;
+
+    @Column(name = "cash_balance", nullable = false)
     private BigDecimal cashBalance;
+
+    @Column(name = "reserved_balance", nullable = false)
     private BigDecimal reservedBalance;
 
+    @Enumerated(EnumType.STRING)
+    private AuthenticationType authenticationType;
 
-    public Long getId() {
-        return id;
-    }
+    private String providerId;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus userStatus;
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-
-    public BigDecimal getCashBalance() {
-        return cashBalance;
-    }
-
-    public void setCashBalance(BigDecimal cashBalance) {
-        this.cashBalance = cashBalance;
-    }
-
-    public BigDecimal getReservedBalance() {
-        return reservedBalance;
-    }
-
-    public void setReservedBalance(BigDecimal reservedBalance) {
-        this.reservedBalance = reservedBalance;
-    }
-
-    public User(Long id, String username, String email, String password, BigDecimal cashBalance, BigDecimal reservedBalance) {
+    public User(Long id, String username, String password, BigDecimal cashBalance, BigDecimal reservedBalance, AuthenticationType authenticationType, String providerId) {
         this.id = id;
         this.username = username;
-        this.email = email;
         this.password = password;
         this.cashBalance = cashBalance;
         this.reservedBalance = reservedBalance;
+        this.authenticationType = authenticationType;
+        this.providerId = providerId;
     }
 
     public User() {}
@@ -84,5 +68,10 @@ public class User {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
     }
 }

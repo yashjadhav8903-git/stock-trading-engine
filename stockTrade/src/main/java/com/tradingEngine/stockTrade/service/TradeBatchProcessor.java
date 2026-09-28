@@ -158,7 +158,6 @@ public class TradeBatchProcessor {
 
 
     private void clearTradeCaches(List<Trade> batch){
-
         Cache userTradeCache = cacheManager.getCache("userTrades");
         if(userTradeCache != null){
             Set<Long> userIdsToEvict = new HashSet<>();
@@ -170,7 +169,6 @@ public class TradeBatchProcessor {
                 userTradeCache.evict(userId);
             }
         }
-
     }
 }
 

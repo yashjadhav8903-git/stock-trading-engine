@@ -42,9 +42,9 @@ public class OrderService {
 
     private final UserRepository userRepository;
 
-    private final StockRepository stockRepository;
-
     private final OrderRepository orderRepository;
+
+      private final StockRepository stockRepository;
 
     private final HoldingRepository holdingRepository;
 
@@ -64,6 +64,7 @@ public class OrderService {
 
 
 
+
     public void placeBuyOrder(OrderRequestDTO orderRequestDTO){
             OrderPlacement(orderRequestDTO, OrderType.BUY);
     }
@@ -75,6 +76,7 @@ public class OrderService {
 
 
 
+    @Transactional
     public void OrderPlacement(OrderRequestDTO orderRequestDTO, OrderType orderType) {
 
         log.info("Request in Order-Service | OrderPlacement | Thread : UserId : | {}, orderType : {} ",
@@ -425,11 +427,9 @@ public class OrderService {
         dto.setOrderType(order.getOrderType());
         dto.setExecutionType(order.getExecutionType());
         dto.setCreatedAt(order.getCreatedAt());
-        log.info("Order data returned service layer to DTO. userId {} ", order.getUserId());
+
 
         return dto;
     }
 }
 //Trade History
-
-

@@ -87,8 +87,4 @@ public class OrderController {
 
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<List<OpenOrderResponseDTO>> getOpenOrderResponseByUserId(@RequestParam Long userId){
-        return ResponseEntity.ok(orderService.getOpenOrderResponseByUserId(userId));
-    }
 }
