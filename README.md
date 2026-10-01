@@ -99,7 +99,7 @@ Email: yashjadhav8903@gmail.com
                                        |
                                        v
                +-------------------------------------------------+
-               |       Embedded Tomcat (600 Worker Threads)      |
+               |       Embedded Tomcat (200 Worker Threads)      |
                +-------------------------------------------------+
                                        |
                                        v
