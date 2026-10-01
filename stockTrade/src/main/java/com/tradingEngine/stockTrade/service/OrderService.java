@@ -5,6 +5,7 @@ import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OrderModifyRequestDTO;
 import com.tradingEngine.stockTrade.DTOs.OrderDTOs.OrderRequestDTO;
 import com.tradingEngine.stockTrade.DTOs.Page.PageResponse;
 import com.tradingEngine.stockTrade.Locks.SymbolLockRegistry;
+import com.tradingEngine.stockTrade.annotations.AuditTradeLog;
 import com.tradingEngine.stockTrade.bookOrderEngine.OrderBook;
 import com.tradingEngine.stockTrade.enums.ExecutionType;
 import com.tradingEngine.stockTrade.enums.OrderStatus;
@@ -65,10 +66,12 @@ public class OrderService {
 
 
 
+    @AuditTradeLog(action = "BUY_ORDER")
     public void placeBuyOrder(OrderRequestDTO orderRequestDTO){
             OrderPlacement(orderRequestDTO, OrderType.BUY);
     }
 
+    @AuditTradeLog(action = "SELL_ORDER")
     public void placeSellOrder(OrderRequestDTO orderRequestDTO){
         OrderPlacement(orderRequestDTO, OrderType.SELL);
     }
@@ -197,6 +200,7 @@ public class OrderService {
 
     // remove order
     @Transactional
+    @AuditTradeLog(action = "CANCEL_ORDER")
     public void cancelOrder(Long orderId,Long userId){
 
         // 1. Database se Order fetch karein
@@ -255,6 +259,7 @@ public class OrderService {
     }
 
     @Transactional
+    @AuditTradeLog(action = "MODIFY_ORDER")
     public void modifyOrder(Long orderId, Long userId, OrderModifyRequestDTO orderModifyRequestDTO){
 
         // 1. Fetch Order

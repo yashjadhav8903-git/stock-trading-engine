@@ -19,7 +19,7 @@ public class UserController {
     private final UserService userService;
     private final OrderService orderService;
 
-    @PostMapping("/{userId}")
+    @PostMapping("addCash/{userId}")
     public ResponseEntity<String> addUserCash(@PathVariable Long userId, @RequestParam BigDecimal cashAmount) {
         userService.addCash(userId,cashAmount);
         return ResponseEntity.ok().body("Cash balance added successfully.");
