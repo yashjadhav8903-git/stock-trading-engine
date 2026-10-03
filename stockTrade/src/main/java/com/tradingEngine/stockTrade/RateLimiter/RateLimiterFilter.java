@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RateIntervalUnit;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
@@ -21,6 +23,16 @@ public class RateLimiterFilter extends OncePerRequestFilter {
         this.rateLimiterService = rateLimiterService;
     }
 
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/doc") ||
+                path.startsWith("/ws-trading") ||
+                path.startsWith("/index.html") ||
+                path.equals("/");
+    }
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -32,11 +44,14 @@ public class RateLimiterFilter extends OncePerRequestFilter {
             // get ip
             String ip = request.getRemoteAddr();
 
-            // userId
-            String userId = request.getHeader("userId");
+            // Spring Security Context se User Extract karo (JWT Filter ke baad execution hona chahiye)
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userId = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal()))
+                    ? auth.getName()
+                    : request.getHeader("userId");
 
             // key must be userId if userId is null then we use ip and uri combine
-            String key = (userId != null && !userId.isBlank()) ? "userId: " + userId : "IP:" + ip;
+            String key = (userId != null && !userId.isBlank()) ? "USER: " + userId : "IP:" + ip;
 
             // first request is allowed
             boolean allowed = true;
@@ -44,12 +59,12 @@ public class RateLimiterFilter extends OncePerRequestFilter {
             try {
 
                 if (uri.contains("/buy") || uri.contains("/sell")) {
-                    rateLimiterService.isRequestAllowed(key + ":ORDERS", 10L, 1L, RateIntervalUnit.SECONDS);
+                   allowed =  rateLimiterService.isRequestAllowed(key + ":ORDERS", 10L, 1L, RateIntervalUnit.SECONDS);
                 } else if (uri.contains("/register") || uri.contains("/login")) {
-                    rateLimiterService.isRequestAllowed(key + ":AUTH", 10L, 1L, RateIntervalUnit.MINUTES);
+                    allowed = rateLimiterService.isRequestAllowed(key + ":AUTH", 10L, 1L, RateIntervalUnit.MINUTES);
                 } else {
                     // 🛡 DEFAULT LIMIT: Baaki pure application ke har API endpoint ke liye
-                    rateLimiterService.isRequestAllowed(key +":GENERAL", 100L, 1L, RateIntervalUnit.MINUTES);
+                   allowed = rateLimiterService.isRequestAllowed(key +":GENERAL", 100L, 1L, RateIntervalUnit.MINUTES);
                 }
 
             } catch (Exception e) {

@@ -26,9 +26,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Postman Raw WebSocket testing ke liye:
-        registry.addEndpoint("/ws-trading")
-                .setAllowedOriginPatterns("*");
+
         // Frontend client is endpoint pe handshaking (connection) karega
         registry.addEndpoint("/ws-trading-sockjs")
                 .setAllowedOriginPatterns("*")  // CORS configuration

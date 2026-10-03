@@ -2,108 +2,536 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Trading Engine Live Feed</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groww Engine - High Frequency Trading Terminal</title>
+    <!-- SockJS and STOMP Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <!-- TradingView Lightweight Charts Library (v4) -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Courier New', Courier, monospace;
-            padding: 30px;
+        :root {
+            --bg-base: #080a0f;
+            --bg-card: #0f141c;
+            --bg-input: #05070a;
+            --border: #1e2638;
+            --accent-green: #00ffa3;
+            --accent-green-glow: rgba(0, 255, 163, 0.25);
+            --accent-red: #ff3b69;
+            --accent-red-glow: rgba(255, 59, 105, 0.25);
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
         }
-        .status-box {
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        .price-box {
-            font-size: 28px;
-            color: #00ff00;
-            margin: 20px 0;
-        }
-        ul {
-            list-style-type: square;
-            color: #00e5ff;
-        }
-        li {
-            margin-bottom: 8px;
-        }
-        hr {
-            border-color: #333;
-        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-base); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Header */
+        header { background: rgba(15, 20, 28, 0.7); backdrop-filter: blur(12px); padding: 16px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 19px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px; }
+        .logo-badge { background: linear-gradient(135deg, #00ffa3, #00b8ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .user-pill { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .btn-logout { background: transparent; border: none; color: var(--accent-red); font-size: 12px; font-weight: 700; cursor: pointer; }
+
+        .status { font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 30px; background: rgba(255, 59, 105, 0.1); border: 1px solid rgba(255, 59, 105, 0.3); color: var(--accent-red); display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
+        .status.connected { background: rgba(0, 255, 163, 0.1); border: 1px solid rgba(0, 255, 163, 0.3); color: var(--accent-green); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: currentColor; box-shadow: 0 0 10px currentColor; }
+
+        /* Container Layout */
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+
+        /* Left Side: Live Feed & Chart */
+        .chart-section { flex: 3; border-right: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+
+        .ticker-header { background: linear-gradient(180deg, rgba(20, 27, 38, 0.6) 0%, rgba(15, 20, 28, 0.8) 100%); padding: 20px 28px; border-radius: 16px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+        .ticker-header::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent-green); box-shadow: 0 0 15px var(--accent-green); }
+
+        .stock-name { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -1px; }
+        .stock-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+
+        .stock-price-wrapper { text-align: right; }
+        .stock-price { font-size: 36px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--accent-green); text-shadow: 0 0 20px var(--accent-green-glow); transition: all 0.2s ease-in-out; }
+        .stock-price.down { color: var(--accent-red); text-shadow: 0 0 20px var(--accent-red-glow); }
+
+        /* Candlestick Chart Box */
+        .chart-wrapper { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 12px; height: 360px; position: relative; width: 100%; overflow: hidden; }
+        #chartContainer { width: 100%; height: 100%; }
+
+        .logs-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .logs-section { background: var(--bg-input); border: 1px solid var(--border); border-radius: 12px; height: 150px; padding: 12px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+        .log-item { padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; background: rgba(255, 255, 255, 0.02); display: flex; justify-content: space-between; animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .log-item.trade { background: rgba(0, 255, 163, 0.08); border-left: 3px solid var(--accent-green); color: #fff; }
+        .log-item .price-highlight { color: var(--accent-green); font-weight: 800; }
+
+        /* Right Side: Order Controls */
+        .order-section { flex: 1.1; background: var(--bg-card); padding: 24px 20px; border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
+        .order-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.5px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        input { background: var(--bg-input); border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; transition: all 0.2s; font-family: 'JetBrains Mono', monospace; }
+        input:focus { border-color: var(--accent-green); box-shadow: 0 0 12px var(--accent-green-glow); }
+
+        .btn-group { display: flex; gap: 12px; margin-top: 10px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+        .btn-buy { background: var(--accent-green); color: #000; box-shadow: 0 4px 20px var(--accent-green-glow); }
+        .btn-sell { background: var(--accent-red); color: #fff; box-shadow: 0 4px 20px var(--accent-red-glow); }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        /* Auth Modal */
+        .modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(5, 7, 10, 0.85); backdrop-filter: blur(16px); display: flex; align-items: center; justify-content: center; z-index: 999; }
+        .modal-card { background: rgba(15, 20, 28, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 380px; padding: 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 16px; }
+        .modal-header { font-size: 20px; font-weight: 800; text-align: center; color: #fff; }
+        .modal-tabs { display: flex; background: var(--bg-input); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
+        .tab-btn { flex:1; padding: 8px; border: none; background: transparent; color: var(--text-muted); font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: var(--border); color: #fff; }
+
+        .btn-auth { background: linear-gradient(135deg, #00ffa3, #00b8ff); color: #000; font-weight: 800; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; margin-top: 8px; }
+
+        .google-btn { background: #fff; color: #000; font-weight: 700; padding: 10px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; text-decoration: none; font-size: 13px; margin-top: 4px; }
+        .google-icon { width: 16px; height: 16px; }
+
+        @keyframes popIn { from { opacity: 0; transform: scale(0.96) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
     </style>
 </head>
 <body>
 
-<h2>🚀 Live Ticker Feed (APPLE)</h2>
-<div id="status" class="status-box" style="color: yellow;">STATUS: CONNECTING...</div>
+<!-- AUTH MODAL -->
+<div id="authModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            ⚡ Welcome to <span class="logo-badge">GROWW</span>
+        </div>
+        <div class="modal-tabs">
+            <button id="tabLogin" class="tab-btn active" onclick="switchTab('LOGIN')">Login</button>
+            <button id="tabRegister" class="tab-btn" onclick="switchTab('REGISTER')">Register</button>
+        </div>
 
-<hr>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="authUsername" placeholder="Enter username">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="authPassword" placeholder="••••••••">
+        </div>
 
-<div class="price-box">
-    Live Price: <span id="price">--.--</span>
+        <button id="authSubmitBtn" class="btn-auth" onclick="handleAuth()">Sign In</button>
+
+        <div style="text-align: center; font-size: 11px; color: var(--text-muted);">OR</div>
+
+        <a href="http://localhost:8080/oauth2/authorization/google" class="google-btn">
+            <svg class="google-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            Continue with Google
+        </a>
+    </div>
 </div>
 
-<hr>
+<header>
+    <div class="logo">
+        <span class="logo-badge">⚡ GROWW</span> MATCHING ENGINE
+    </div>
+    <div class="header-right">
+        <div class="user-pill">
+            👤 User ID: <span id="displayUserId">--</span>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+        <div id="connStatus" class="status">
+            <span class="status-dot"></span>
+            <span id="statusText">CONNECTING...</span>
+        </div>
+    </div>
+</header>
 
-<h3>🔔 My Private Order Notifications:</h3>
-<ul id="notifications"></ul>
+<div class="main-container">
+    <div class="chart-section">
+        <div class="ticker-header">
+            <div>
+                <div class="stock-name" id="stockSymbol">AMZN</div>
+                <div class="stock-sub">NSE Live Matching Engine Tick Channel</div>
+            </div>
+            <div class="stock-price-wrapper">
+                <div class="stock-price" id="livePrice">₹1.00</div>
+            </div>
+        </div>
 
-<script type="text/javascript">
-    var stompClient = null;
+        <!-- CANDLESTICK CHART CONTAINER -->
+        <div class="chart-wrapper">
+            <div id="chartContainer"></div>
+        </div>
 
-    function connect() {
-        var socket = new SockJS('/ws-trading-sockjs');
-        stompClient = Stomp.over(socket);
+        <div>
+            <div class="logs-title">
+                <span>🔥 LIVE EXECUTED TRADES LOG</span>
+            </div>
+            <div class="logs-section" id="tradeLogs">
+                <div class="log-item"><span>[SYSTEM] Engine Initialized. Listening to WebSocket...</span></div>
+            </div>
+        </div>
+    </div>
 
-        stompClient.connect({}, function (frame) {
-            console.log('STOMP Connected: ' + frame);
-            document.getElementById('status').innerText = 'STATUS: CONNECTED TO STOMP BROKER';
-            document.getElementById('status').style.color = '#00ff00';
+    <div class="order-section">
+        <div class="order-title">Place Limit Order</div>
 
-            // 1. Live Ticker Public Channel Subscription
-            stompClient.subscribe('/topic/ticker/APPLE', function (message) {
-                console.log("RECEIVED TICKER:", message.body);
-                var cleanPrice = message.body.replace(/"/g, '').replace(/\\/g, '').trim();
-                document.getElementById('price').innerText = '₹ ' + cleanPrice;
+        <div class="form-group">
+            <label>User ID</label>
+            <input type="number" id="userId" value="1" readonly style="opacity: 0.7;">
+        </div>
+
+        <div class="form-group">
+            <label>Stock Symbol</label>
+            <input type="text" id="orderSymbol" value="AMZN" onchange="onSymbolChange(this.value)">
+        </div>
+
+        <div class="form-group">
+            <label>Price (₹)</label>
+            <input type="number" step="0.01" id="orderPrice" value="1.00">
+        </div>
+
+        <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" id="orderQty" value="10">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-buy" onclick="placeOrder('BUY')">BUY</button>
+            <button class="btn btn-sell" onclick="placeOrder('SELL')">SELL</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let stompClient = null;
+    let currentSubscription = null;
+    let currentSymbol = "AMZN";
+    let lastPrice = 0;
+    let activeAuthMode = "LOGIN";
+
+    // Chart Variables
+    let tvChart = null;
+    let candleSeries = null;
+    let currentCandle = null;
+
+    function initChart() {
+        const container = document.getElementById('chartContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        tvChart = LightweightCharts.createChart(container, {
+            width: container.clientWidth,
+            height: container.clientHeight,
+            layout: {
+                background: { color: '#0f141c' },
+                textColor: '#64748b',
+                fontFamily: 'JetBrains Mono',
+            },
+            grid: {
+                vertLines: { color: '#1e2638' },
+                horzLines: { color: '#1e2638' },
+            },
+            timeScale: {
+                borderColor: '#1e2638',
+                timeVisible: true,
+                secondsVisible: true,
+            },
+        });
+
+        // Safe Candlestick Series Creation
+        if (typeof tvChart.addCandlestickSeries === 'function') {
+            candleSeries = tvChart.addCandlestickSeries({
+                upColor: '#00ffa3',
+                downColor: '#ff3b69',
+                borderDownColor: '#ff3b69',
+                borderUpColor: '#00ffa3',
+                wickDownColor: '#ff3b69',
+                wickUpColor: '#00ffa3',
             });
-
-            // 2. Private User Order Notifications (User ID: 1)
-            // 2. Private User Order Notifications (User ID: 1)
-            stompClient.subscribe('/queue/orders/1', function (message) {
-                console.log("RECEIVED PRIVATE NOTIFICATION RAW:", message.body);
-
-                let data;
-                try {
-                    data = typeof message.body === 'string' ? JSON.parse(message.body) : message.body;
-                } catch (e) {
-                    data = message.body;
-                }
-
-                const node = document.createElement("LI");
-                let textContent = "";
-
-                if (typeof data === 'object' && data !== null) {
-                    textContent = "[" + new Date().toLocaleTimeString() + "] Order #" + (data.orderId || 'N/A') +
-                        " (" + (data.orderType || 'TRADE') + ") " + (data.quantity || '') + " qty @ ₹" + (data.price || '');
-                } else {
-                    textContent = "[" + new Date().toLocaleTimeString() + "] " + data;
-                }
-
-                node.appendChild(document.createTextNode(textContent));
-                document.getElementById("notifications").appendChild(node);
+        } else if (LightweightCharts.CandlestickSeries) {
+            candleSeries = tvChart.addSeries(LightweightCharts.CandlestickSeries, {
+                upColor: '#00ffa3',
+                downColor: '#ff3b69',
+                borderDownColor: '#ff3b69',
+                borderUpColor: '#00ffa3',
+                wickDownColor: '#ff3b69',
+                wickUpColor: '#00ffa3',
             });
+        }
 
-        }, function (error) {
-            console.error('STOMP Error:', error);
-            document.getElementById('status').innerText = 'STATUS: DISCONNECTED (RETRYING...)';
-            document.getElementById('status').style.color = '#ff0000';
-            setTimeout(connect, 3000);
+        window.addEventListener('resize', () => {
+            if (tvChart && container) {
+                tvChart.resize(container.clientWidth, container.clientHeight);
+            }
         });
     }
 
-    // Auto-connect on page load
-    connect();
+    // 🔥 Load 6 initial demo candles so chart looks alive
+    function loadInitialDummyData() {
+        if (!candleSeries) return;
+
+        const now = Math.floor(Date.now() / 1000);
+        const dummyCandles = [];
+        let basePrice = parseFloat(document.getElementById('orderPrice').value) || 1.00;
+
+        for (let i = 6; i >= 1; i--) {
+            const time = now - (i * 60);
+            const open = basePrice + (Math.random() * 0.08 - 0.04);
+            const high = open + Math.random() * 0.05 + 0.01;
+            const low = open - Math.random() * 0.05 - 0.01;
+            const close = (high + low) / 2;
+
+            dummyCandles.push({
+                time: Math.floor(time / 60) * 60,
+                open: parseFloat(open.toFixed(2)),
+                high: parseFloat(high.toFixed(2)),
+                low: parseFloat(low.toFixed(2)),
+                close: parseFloat(close.toFixed(2))
+            });
+            basePrice = close;
+        }
+
+        candleSeries.setData(dummyCandles);
+        currentCandle = dummyCandles[dummyCandles.length - 1]; // Current candle context
+
+        if (tvChart) {
+            tvChart.timeScale().fitContent();
+        }
+    }
+
+    function processTickForCandle(price, timestamp) {
+        if (!candleSeries) return;
+
+        const timeInSeconds = timestamp ? Math.floor(new Date(timestamp).getTime() / 1000) : Math.floor(Date.now() / 1000);
+        const minuteBucket = Math.floor(timeInSeconds / 60) * 60;
+
+        if (!currentCandle || currentCandle.time !== minuteBucket) {
+            currentCandle = {
+                time: minuteBucket,
+                open: price,
+                high: price,
+                low: price,
+                close: price
+            };
+        } else {
+            currentCandle.high = Math.max(currentCandle.high, price);
+            currentCandle.low = Math.min(currentCandle.low, price);
+            currentCandle.close = price;
+        }
+
+        candleSeries.update(currentCandle);
+        if (tvChart) {
+            tvChart.timeScale().fitContent();
+        }
+    }
+
+    function checkExistingAuth() {
+        const jwtToken = localStorage.getItem('jwtToken');
+        const userId = localStorage.getItem('userId');
+
+        if (jwtToken && userId) {
+            document.getElementById('authModal').style.display = 'none';
+            document.getElementById('userId').value = userId;
+            document.getElementById('displayUserId').innerText = userId;
+            connectWebSocket();
+        } else {
+            document.getElementById('authModal').style.display = 'flex';
+        }
+    }
+
+    function switchTab(mode) {
+        activeAuthMode = mode;
+        if (mode === 'LOGIN') {
+            document.getElementById('tabLogin').className = 'tab-btn active';
+            document.getElementById('tabRegister').className = 'tab-btn';
+            document.getElementById('authSubmitBtn').innerText = 'Sign In';
+        } else {
+            document.getElementById('tabLogin').className = 'tab-btn';
+            document.getElementById('tabRegister').className = 'tab-btn active';
+            document.getElementById('authSubmitBtn').innerText = 'Register User';
+        }
+    }
+
+    function handleAuth() {
+        const username = document.getElementById('authUsername').value;
+        const password = document.getElementById('authPassword').value;
+
+        if (!username || !password) {
+            alert("Please enter both username and password!");
+            return;
+        }
+
+        const endpoint = activeAuthMode === 'LOGIN' ? '/auth/login' : '/auth/register';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password })
+        })
+            .then(async res => {
+                if (res.ok) {
+                    const data = await res.json();
+                    if (activeAuthMode === 'LOGIN') {
+                        localStorage.setItem('jwtToken', data.jwtToken);
+                        localStorage.setItem('refreshToken', data.refreshToken);
+                        localStorage.setItem('userId', data.userId);
+                        checkExistingAuth();
+                    } else {
+                        alert("Registration Successful! Please login.");
+                        switchTab('LOGIN');
+                    }
+                } else {
+                    const err = await res.text();
+                    alert("Auth Failed: " + err);
+                }
+            })
+            .catch(err => alert("Auth Request Error: " + err));
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.reload();
+    }
+
+    function connectWebSocket() {
+        const socket = new SockJS('/ws-trading-sockjs');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            const statusEl = document.getElementById('connStatus');
+            statusEl.classList.add('connected');
+            document.getElementById('statusText').innerText = 'CONNECTED LIVE';
+
+            subscribeToSymbol(currentSymbol);
+        }, function (error) {
+            const statusEl = document.getElementById('connStatus');
+            statusEl.classList.remove('connected');
+            document.getElementById('statusText').innerText = 'DISCONNECTED';
+            setTimeout(connectWebSocket, 3000);
+        });
+    }
+
+    function subscribeToSymbol(symbol) {
+        if (!stompClient || !stompClient.connected) return;
+
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+        }
+
+        currentSymbol = symbol.toUpperCase();
+        document.getElementById('stockSymbol').innerText = currentSymbol;
+
+        // Load 6 initial candles on symbol subscription
+        loadInitialDummyData();
+
+        const topicPath = '/topic/ticks/' + currentSymbol;
+
+        currentSubscription = stompClient.subscribe(topicPath, function (tickMessage) {
+            const tick = JSON.parse(tickMessage.body);
+            updateLivePrice(tick.price);
+            processTickForCandle(tick.price, tick.timestamp);
+            addTradeLog(tick);
+        });
+    }
+
+    function onSymbolChange(newSymbol) {
+        if (newSymbol && newSymbol.trim() !== "") {
+            subscribeToSymbol(newSymbol.trim());
+        }
+    }
+
+    function updateLivePrice(newPrice) {
+        const priceEl = document.getElementById('livePrice');
+        const parsedPrice = parseFloat(newPrice).toFixed(2);
+
+        priceEl.innerText = '₹' + parsedPrice;
+
+        if (lastPrice > 0) {
+            if (newPrice < lastPrice) {
+                priceEl.className = 'stock-price down';
+            } else {
+                priceEl.className = 'stock-price';
+            }
+        }
+        lastPrice = newPrice;
+    }
+
+    function addTradeLog(tick) {
+        const logsContainer = document.getElementById('tradeLogs');
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-item trade';
+
+        const timestamp = tick.timestamp ? new Date(tick.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+        logEntry.innerHTML = `
+            <span>[${timestamp}] 🚀 EXECUTED ${tick.symbol} - ${tick.quantity} Qty</span>
+            <span class="price-highlight">@ ₹${parseFloat(tick.price).toFixed(2)}</span>
+        `;
+
+        logsContainer.prepend(logEntry);
+    }
+
+    function placeOrder(type) {
+        const userId = parseInt(document.getElementById('userId').value);
+        const symbol = document.getElementById('orderSymbol').value.toUpperCase();
+        const price = parseFloat(document.getElementById('orderPrice').value);
+        const quantity = parseInt(document.getElementById('orderQty').value);
+        const jwtToken = localStorage.getItem('jwtToken');
+
+        if (!jwtToken) {
+            alert("No JWT Token found! Please login again.");
+            logout();
+            return;
+        }
+
+        const payload = {
+            userId: userId,
+            symbol: symbol,
+            price: price,
+            quantity: quantity,
+            orderType: type,
+            executionType: "LIMIT"
+        };
+
+        const endpoint = type === 'BUY' ? '/orders/buy' : '/orders/sell';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + jwtToken
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(async res => {
+                if (res.ok) {
+                    const msg = await res.text();
+                    console.log("Order Success:", msg);
+                } else {
+                    const errText = await res.text();
+                    alert("Order Rejected: " + errText);
+                }
+            })
+            .catch(err => {
+                console.error("Network Error:", err);
+                alert("Network Error!");
+            });
+    }
+
+    // Initialize Chart & Auth Check on Page Load
+    window.onload = () => {
+        initChart();
+        checkExistingAuth();
+    };
 </script>
 </body>
 </html>

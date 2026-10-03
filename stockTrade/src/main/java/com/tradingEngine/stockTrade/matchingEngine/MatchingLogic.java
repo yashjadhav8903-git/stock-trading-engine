@@ -1,6 +1,8 @@
 package com.tradingEngine.stockTrade.matchingEngine;
 
+import com.tradingEngine.stockTrade.DTOs.TradingUI.TradeTickDto;
 import com.tradingEngine.stockTrade.Locks.SymbolLockRegistry;
+import com.tradingEngine.stockTrade.RabbitMQ.MarketDataPublisher;
 import com.tradingEngine.stockTrade.Redis.RedisService;
 import com.tradingEngine.stockTrade.bookOrderEngine.OrderBook;
 import com.tradingEngine.stockTrade.enums.ExecutionType;
@@ -58,19 +60,21 @@ public class MatchingLogic {
     private final RedisService redisService;
 //    private final RedisPublisher redisPublisher;
     private final SymbolLockRegistry symbolLockRegistry;
+    private final MarketDataPublisher marketDataPublisher;
 
 
     public MatchingLogic(TradeBatchProcessor tradeBatchProcessor,OrderRepository orderRepository,UserRepository userRepository,StockRepository stockRepository,
                          HoldingRepository holdingRepository,RedisService redisService,
-                         SymbolLockRegistry symbolLockRegistry) {
+                         SymbolLockRegistry symbolLockRegistry,
+                         MarketDataPublisher marketDataPublisher) {
         this.tradeBatchProcessor = tradeBatchProcessor;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.stockRepository = stockRepository;
         this.holdingRepository = holdingRepository;
-
         this.redisService = redisService;
         this.symbolLockRegistry = symbolLockRegistry;
+        this.marketDataPublisher = marketDataPublisher;
     }
 
 
@@ -231,6 +235,17 @@ public class MatchingLogic {
 
         // REDIS FAST CACHE UPDATE:
         redisService.updateLTP(bestBuyOrder.getSymbol(), tradePrice);
+
+        //REAL-TIME WEBSOCKET FEED PUSH (Groww UI ke liye live tick broadcast)
+        TradeTickDto tickDto = TradeTickDto.builder()
+                .symbol(bestBuyOrder.getSymbol())
+                .price(tradePrice)
+                .quantity(TradeQuantity)
+                .timestamp(LocalDateTime.now())
+                .build();
+        marketDataPublisher.publishTick(tickDto);
+
+        log.info("REAL-TIME WEBSOCKET FEED PUSH");
 
         // trade Object / trade creation
         Trade trade = getTrade(bestBuyOrder,bestSellOrder);

@@ -1,6 +1,7 @@
 package com.tradingEngine.stockTrade.WebSecurityConfig;
 
 import com.tradingEngine.stockTrade.OAuth2Handler.CustomOAuth2SuccessHandler;
+import com.tradingEngine.stockTrade.RateLimiter.RateLimiterFilter;
 import com.tradingEngine.stockTrade.SpringBootSecurity.JwtAuthFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class SecurityConfig {
     private final JwtAuthFilter  jwtAuthFilter;
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
+    private final RateLimiterFilter rateLimiterFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,15 +44,21 @@ public class SecurityConfig {
                                 "/doc",
                                 "/doc/**",
                                 "/doc/index.html",
+                                "/index.html",
+                                "/static/**",
+                                "/",
+                                "/ws-trading/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api-docs",
                                 "/api-docs/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/ws-trading-sockjs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimiterFilter, JwtAuthFilter.class)
 
 
                 // Google / GitHub Login Configuration
