@@ -34,7 +34,7 @@ public class Stock {
     }
 
     public void setCompanyName(String companyName) {
-        companyName = companyName;
+       this.companyName = companyName;
     }
 
     public BigDecimal getCurrentPrice() {

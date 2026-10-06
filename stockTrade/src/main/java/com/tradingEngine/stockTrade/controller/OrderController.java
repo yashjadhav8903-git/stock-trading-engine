@@ -26,7 +26,7 @@ public class OrderController {
     }
 
     @PostMapping("/buy")
-    public ResponseEntity<String> placeOrder(@Valid @RequestBody OrderRequestDTO
+    public ResponseEntity<String> buyOrder(@Valid @RequestBody OrderRequestDTO
                                                          orderRequestDTO){
 
         log.info("Buy-Order Request Enter ORDER Controller | UserId : {}",orderRequestDTO.getUserId());

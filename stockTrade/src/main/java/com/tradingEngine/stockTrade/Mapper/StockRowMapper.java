@@ -11,7 +11,7 @@ public class StockRowMapper implements RowMapper<Stock> {
     public Stock mapRow(ResultSet rs, int rowNum) throws SQLException {
         Stock stock = new Stock();
         stock.setId(rs.getLong("id"));
-        stock.setCompanyName(rs.getString("companyName"));
+        stock.setCompanyName(rs.getString("companyname"));
         stock.setCurrentPrice(rs.getBigDecimal("current_price"));
         stock.setSymbol(rs.getString("symbol"));
 

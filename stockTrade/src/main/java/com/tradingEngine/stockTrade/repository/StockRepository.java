@@ -1,5 +1,6 @@
 package com.tradingEngine.stockTrade.repository;
 
+import com.tradingEngine.stockTrade.DTOs.Page.PageResponse;
 import com.tradingEngine.stockTrade.DTOs.StocksDTOs.CurrentPriceResponseDTO;
 import com.tradingEngine.stockTrade.DTOs.StocksDTOs.StocksRequestDTO;
 import com.tradingEngine.stockTrade.Mapper.StockRowMapper;
@@ -10,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Repository
 public class StockRepository {
@@ -24,37 +26,29 @@ public class StockRepository {
     }
 
 
-    public void SaveToStock(StocksRequestDTO stock){
+    public void save(Stock stock) {
+        String sql = "INSERT INTO stocks (symbol, companyname, current_price) VALUES (?, ?, ?)";
 
-        String sql = """
-                insert into stocks
-                (
-                symbol,
-                companyname,
-                current_price
-                )
-                values(?,?,?)
-                """;
-
-       int rowAffected = jdbcTemplate.update(sql,
+        jdbcTemplate.update(
+                sql,
                 stock.getSymbol(),
                 stock.getCompanyName(),
-                stock.getCurrentPrice());
-
-       if(rowAffected == 1){
-        log.info("Stock has been saved successfully");
-       } else {
-           log.warn("Stock has been saved failure ❌");
-       }
+                stock.getCurrentPrice()
+        );
     }
 
+    public boolean existsStockBySymbol (String symbol){
+        String sql = "select count(*) from stocks where symbol = ?";
+        Integer count = jdbcTemplate.queryForObject(sql,Integer.class,symbol);
+        return count > 0;
+    }
 
     public Stock findBySymbol(String symbol){
 
         String sql = """
                 SELECT
                 id,
-                companyName,
+                companyname,
                 symbol,
                 current_price
                 FROM stocks
@@ -64,13 +58,13 @@ public class StockRepository {
         return jdbcTemplate.queryForObject(sql, stockRowMapper, symbol.toUpperCase());
     }
 
-    public int updateCurrentPrice(String symbol, BigDecimal newPrice){
+    public void updateCurrentPrice(String symbol, BigDecimal newPrice){
         String sql = """
                 UPDATE stocks
                 set current_price = ?
                 where symbol = ?
         """;
-        return jdbcTemplate.update(sql,newPrice,symbol.toUpperCase());
+        jdbcTemplate.update(sql, newPrice, symbol.toUpperCase());
     }
 
 
@@ -90,6 +84,42 @@ public class StockRepository {
                     rs.getBigDecimal("current_price")
         ),
                 symbol.trim().toUpperCase());
+    }
+
+
+    public PageResponse<Stock> getStockPage(int page, int pageSize){
+        // calculate offSet
+        int offSet = page * pageSize;
+
+        String countSql = """
+                select count(*) from stocks
+        """;
+
+        Long elementCount = jdbcTemplate.queryForObject(countSql, Long.class);
+        if(elementCount == null) elementCount = 0L;
+
+        String sql = """
+                select
+                 id,
+                companyname,
+                symbol,
+                current_price
+                FROM stocks
+                order by id desc
+                limit ? offset ?
+        """;
+
+        List<Stock> content = jdbcTemplate.query(sql, stockRowMapper, pageSize, offSet);
+
+        int totalPages = (int) Math.ceil((double) elementCount / pageSize);
+        PageResponse<Stock> response = new PageResponse<>();
+        response.setTotalPages(totalPages);
+        response.setContent(content);
+        response.setPageNumber(page);
+        response.setPageSize(pageSize);
+        response.setTotalElements(elementCount);
+
+        return response;
 
     }
 }

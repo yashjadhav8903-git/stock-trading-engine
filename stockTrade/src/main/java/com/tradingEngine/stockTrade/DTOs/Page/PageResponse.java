@@ -18,6 +18,8 @@ public class PageResponse <T>{
         this.totalElements = totalElements;
     }
 
+    public PageResponse() {}
+
     public List<T> getContent() {
         return content;
     }

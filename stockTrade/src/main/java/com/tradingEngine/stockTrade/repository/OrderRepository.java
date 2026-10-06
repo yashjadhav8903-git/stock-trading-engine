@@ -151,8 +151,6 @@ public class OrderRepository {
                 orderRowMapper,
                 userId);
 
-        log.info("Data Come from Database UserId is : {}", userId);
-
         return query;
 
     }
@@ -233,7 +231,6 @@ public class OrderRepository {
         return query;
 
     }
-
 
 
 

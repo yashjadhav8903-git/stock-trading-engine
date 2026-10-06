@@ -86,6 +86,8 @@ public class OrderService {
                 orderRequestDTO.getUserId(), orderRequestDTO.getOrderType());
 
         // 1. LOCK KE BAHAR: Validation, Cash/Stock Locking & DB Persistence
+        //Agar request EXCHANGE / ADMIN System user (0L) ki taraf se hai,
+        boolean isSystemUser = Long.valueOf(0L).equals(orderRequestDTO.getUserId());
 
         // Step A: Validation
         validateOrder(orderRequestDTO);
@@ -113,14 +115,17 @@ public class OrderService {
             }
         }
         else if (orderType == OrderType.SELL) {
-            int rows = holdingRepository.reserveStock(
-                    orderRequestDTO.getUserId(),
-                    orderRequestDTO.getSymbol(),
-                    orderRequestDTO.getQuantity()
-            );
+            // AGAR SYSTEM USER / ADMIN HAI TOH STOCK RESERVE / HOLDING CHECK SKIP KARO!
+            if(!isSystemUser){
+                int rows = holdingRepository.reserveStock(
+                        orderRequestDTO.getUserId(),
+                        orderRequestDTO.getSymbol(),
+                        orderRequestDTO.getQuantity()
+                );
 
-            if (rows == 0) {
-                throw new InsufficientBalanceException("Insufficient stock holdings to place sell order");
+                if (rows == 0) {
+                    throw new InsufficientBalanceException("Insufficient stock holdings to place sell order");
+                }
             }
         }
 

@@ -1,6 +1,5 @@
 package com.tradingEngine.stockTrade.DTOs.AuthenticationsDTOs;
 
-import java.math.BigDecimal;
 
 public class SignUpRequestDTO {
 

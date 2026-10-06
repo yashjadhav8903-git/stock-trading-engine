@@ -40,14 +40,14 @@ public class HoldingRepository {
     }
 
     // 2. SELLER SIDE: Trade match hone par reserved_quantity deduct karo
-    public int deductReservedStock(Long userId,String symbol,int quantity){
+    public void deductReservedStock(Long userId, String symbol, int quantity){
         String sql = """
                 update holdings
                 set reserved_quantity = reserved_quantity - ?
                 where user_id=? and symbol=? and reserved_quantity >= ?
         """;
 
-        return jdbcTemplate.update(sql,quantity,userId,symbol.toUpperCase(),quantity);
+        jdbcTemplate.update(sql, quantity, userId, symbol.toUpperCase(), quantity);
     }
 
     // 3. SELL ORDER PLACEMENT: Order lagte waqt stock lock karne ke liye (OrderService mein kaam aayega)
@@ -86,6 +86,19 @@ public class HoldingRepository {
     }
 
 
+    // admin se liye
+    public boolean hasUserEnoughStock(Long userId,String symbol,Integer requiredQuantity){
+        String sql = """
+            SELECT COALESCE(quantity, 0)
+            FROM holdings
+            WHERE user_id = ? AND symbol = ?
+            """;
 
+        List<Integer> result = jdbcTemplate.query(sql, (rs,rowNum) -> rs.getInt(1),userId,symbol.toUpperCase().trim());
+        if(result.isEmpty()){
+            return false;
+        }
+        return result.getFirst() >= requiredQuantity;
+    }
 
 }
