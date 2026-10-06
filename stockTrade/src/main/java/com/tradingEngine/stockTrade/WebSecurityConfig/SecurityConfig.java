@@ -53,8 +53,7 @@ public class SecurityConfig {
                                 "/api-docs",
                                 "/api-docs/**",
                                 "/v3/api-docs/**",
-                                "/ws-trading-sockjs/**",
-                                "/stocks/**"
+                                "/ws-trading-sockjs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

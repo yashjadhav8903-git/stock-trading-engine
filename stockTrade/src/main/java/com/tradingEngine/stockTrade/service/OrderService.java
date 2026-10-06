@@ -10,6 +10,7 @@ import com.tradingEngine.stockTrade.bookOrderEngine.OrderBook;
 import com.tradingEngine.stockTrade.enums.ExecutionType;
 import com.tradingEngine.stockTrade.enums.OrderStatus;
 import com.tradingEngine.stockTrade.enums.OrderType;
+import com.tradingEngine.stockTrade.exception.CircuitBreakerViolationException;
 import com.tradingEngine.stockTrade.exception.EngineBusyException;
 import com.tradingEngine.stockTrade.exception.InsufficientBalanceException;
 import com.tradingEngine.stockTrade.exception.OrderNotFoundException;
@@ -192,6 +193,9 @@ public class OrderService {
                 throw new IllegalArgumentException("Price must be greater than zero");
             }
         }
+
+        // validation me hai check price limit
+        validateCircuitBreaker(orderRequestDTO.getSymbol(),orderRequestDTO.getPrice());
 
         if(orderRequestDTO.getExecutionType() == ExecutionType.MARKET){
             if(orderRequestDTO.getPrice() != null){
@@ -440,6 +444,29 @@ public class OrderService {
 
 
         return dto;
+    }
+
+    // price limit ke liye
+    private void validateCircuitBreaker(String symbol,BigDecimal orderPrice){
+        if(orderPrice == null) {
+            return; // MARKET order ke liye skip
+        }
+
+        BigDecimal basePrice = stockRepository.getCurrentPrice(symbol);
+        if(basePrice == null || basePrice.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        // 10% Circuit Limits calculation
+        BigDecimal upperLimit = basePrice.multiply(new BigDecimal("1.10"));
+        BigDecimal lowerLimit = basePrice.multiply(new BigDecimal("0.90"));
+
+        if(orderPrice.compareTo(upperLimit) > 0 || orderPrice.compareTo(lowerLimit) < 0) {
+            throw new CircuitBreakerViolationException(
+                    String.format("Order price ₹%s is outside circuit band [₹%s - ₹%s] for %s",
+                            orderPrice, lowerLimit, upperLimit, symbol)
+            );
+        }
     }
 }
 //Trade History

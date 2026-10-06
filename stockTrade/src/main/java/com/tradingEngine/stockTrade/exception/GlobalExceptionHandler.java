@@ -115,6 +115,22 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    @ExceptionHandler(CircuitBreakerViolationException.class)
+    public ResponseEntity<ExceptionResponse> handleCircuitBreakerViolationException(CircuitBreakerViolationException ex,
+                                                                       HttpServletRequest request) {
+        ExceptionResponse errorResponse = new ExceptionResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
     @ExceptionHandler(InvalidTradePriceException.class)
     public ResponseEntity<ExceptionResponse> handleInvalidTradePriceException(InvalidTradePriceException ex,
                                                              HttpServletRequest request) {

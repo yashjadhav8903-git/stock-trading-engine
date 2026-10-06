@@ -122,4 +122,13 @@ public class StockRepository {
         return response;
 
     }
+
+    // get Current price
+    public BigDecimal getCurrentPrice(String symbol){
+        String sql = """
+                select current_price from stocks where symbol = ?
+                """;
+
+        return jdbcTemplate.queryForObject(sql,BigDecimal.class,symbol.toUpperCase());
+    }
 }
