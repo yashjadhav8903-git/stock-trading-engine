@@ -2,6 +2,7 @@ package com.tradingEngine.stockTrade.SpringBootSecurity;
 
 import com.tradingEngine.stockTrade.JPARepository.UserRepositoryJPA;
 import com.tradingEngine.stockTrade.model.User;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +26,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtAuthUtils jwtAuthUtils;
     private final UserRepositoryJPA userRepositoryJPA;
+    private final HandlerExceptionResolver handlerExceptionResolver;
+
 
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
@@ -90,8 +94,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
 
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error("Exception in JwtAuthFilter {} ", e.getMessage());
+            handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }
 }

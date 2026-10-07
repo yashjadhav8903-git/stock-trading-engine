@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class StockService {
 
-
     private static final Long EXCHANGE_SYSTEM_USER_ID = 0L;
 
     private final StockRepository stockRepository;

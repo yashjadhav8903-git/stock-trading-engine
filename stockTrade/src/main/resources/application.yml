@@ -1,0 +1,28 @@
+management:
+  health:
+    circuitbreakers:
+      enabled: true                  # 👈 CircuitBreakers health indicator enable karo
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,metrics,circuitbreaker-events  # 👈 Expose endpoints
+  endpoint:
+    health:
+      show-details: always
+
+# Resilience4j Config
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true # 👈 Health indicator me state dikhane ke liye REQUIRED hai!
+    instances:
+      dbOperationService:
+        baseConfig: default
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000ms
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true

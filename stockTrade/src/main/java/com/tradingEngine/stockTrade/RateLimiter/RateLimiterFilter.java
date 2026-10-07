@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
 import java.io.IOException;
 
 @Component
@@ -18,9 +20,12 @@ import java.io.IOException;
 public class RateLimiterFilter extends OncePerRequestFilter {
 
     private final RateLimiterService  rateLimiterService;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
-    public RateLimiterFilter(RateLimiterService rateLimiterService) {
+
+    public RateLimiterFilter(RateLimiterService rateLimiterService,HandlerExceptionResolver handlerExceptionResolver) {
         this.rateLimiterService = rateLimiterService;
+        this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -96,6 +101,7 @@ public class RateLimiterFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             log.error("Unhandled Exception in RateLimiterFilter : {}", request);
+            handlerExceptionResolver.resolveException(request, response, null, e);
         }
     }
 }

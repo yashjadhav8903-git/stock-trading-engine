@@ -32,7 +32,6 @@ public class TradeService {
     }
 
 
-
     // return
     @Cacheable(value = "globalTrades", key = "'recent'")
     @Transactional(readOnly = true)

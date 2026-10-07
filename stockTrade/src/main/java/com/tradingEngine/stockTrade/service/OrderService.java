@@ -21,6 +21,7 @@ import com.tradingEngine.stockTrade.repository.HoldingRepository;
 import com.tradingEngine.stockTrade.repository.OrderRepository;
 import com.tradingEngine.stockTrade.repository.StockRepository;
 import com.tradingEngine.stockTrade.repository.UserRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
@@ -68,11 +69,13 @@ public class OrderService {
 
 
     @AuditTradeLog(action = "BUY_ORDER")
+    @CircuitBreaker(name = "dbOperationService",fallbackMethod = "placeOrderFallback")
     public void placeBuyOrder(OrderRequestDTO orderRequestDTO){
             OrderPlacement(orderRequestDTO, OrderType.BUY);
     }
 
     @AuditTradeLog(action = "SELL_ORDER")
+    @CircuitBreaker(name = "dbOperationService",fallbackMethod = "placeOrderFallback")
     public void placeSellOrder(OrderRequestDTO orderRequestDTO){
         OrderPlacement(orderRequestDTO, OrderType.SELL);
     }
@@ -380,6 +383,7 @@ public class OrderService {
 
     @Cacheable(value = "userOrders", key = "#userId")
     @Transactional(readOnly = true)
+    @CircuitBreaker(name = "dbOperationService", fallbackMethod = "getOrdersFallback")
     public List<OpenOrderResponseDTO> getOrders(Long userId){
 
         log.info("OrderService -- Getting OpenOrders for UserId : {}", userId);
@@ -414,12 +418,14 @@ public class OrderService {
 
 
     @Transactional(readOnly = true)
+    @CircuitBreaker(name = "dbOperationService", fallbackMethod = "getOrdersFallback")
     public PageResponse<OpenOrderResponseDTO> findOrdersInfo(Integer page, Integer pageSize){
         return orderRepository.findOrdersInfo(page, pageSize);
     }
 
     @Transactional(readOnly = true)
     @Cacheable(value = "OpenOrderInfoByUserId", key = "#userId")
+    @CircuitBreaker(name = "dbOperationService", fallbackMethod = "getOrdersFallback")
     public List<OpenOrderResponseDTO> getOpenOrderResponseByUserId(Long userId){
         return orderRepository.getOpenOrderResponseByUserId(userId)
                 .stream()
@@ -467,6 +473,23 @@ public class OrderService {
                             orderPrice, lowerLimit, upperLimit, symbol)
             );
         }
+    }
+
+    // 🚨 FALLBACK METHOD
+    public void placeOrderFallback(OrderRequestDTO orderRequestDTO, Throwable throwable) {
+        log.error("Circuit Breaker OPEN! Fallback executed for UserId: {}. Reason: {}",
+                orderRequestDTO.getUserId(), throwable.getMessage());
+
+        throw new EngineBusyException("Trading engine is currently under high load or DB is slow. Please try again after a few seconds.");
+    }
+
+    // 🚨 FALLBACK METHOD FOR READ OPERATION
+    public List<OpenOrderResponseDTO> getOrdersFallback(Long userId, Throwable throwable) {
+        log.error("Database connection slow or OPEN circuit! Fallback executed for getOrders on UserId: {}. Error: {}",
+                userId, throwable.getMessage());
+
+        // Graceful Response: Empty List return kar do taaki UI crash na ho!
+        return List.of();
     }
 }
 //Trade History
