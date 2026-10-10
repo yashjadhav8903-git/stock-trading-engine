@@ -7,11 +7,15 @@ import com.tradingEngine.stockTrade.DTOs.AuthenticationsDTOs.SignUpResponseDTO;
 import com.tradingEngine.stockTrade.DTOs.RedisDTOs.RefreshTokenRedisDTO;
 import com.tradingEngine.stockTrade.DTOs.RefreshTokenDTO.RefreshTokenRequestDTO;
 import com.tradingEngine.stockTrade.DTOs.RefreshTokenDTO.RefreshTokenResponseDTO;
+import com.tradingEngine.stockTrade.JPARepository.RoleRepository;
 import com.tradingEngine.stockTrade.OAuth2Handler.OAuth2HelperMethods;
 import com.tradingEngine.stockTrade.SpringBootSecurity.JwtAuthUtils;
 import com.tradingEngine.stockTrade.enums.AuthenticationType;
 import com.tradingEngine.stockTrade.JPARepository.UserRepositoryJPA;
+import com.tradingEngine.stockTrade.enums.RoleType;
 import com.tradingEngine.stockTrade.enums.UserStatus;
+import com.tradingEngine.stockTrade.exception.RoleNotFoundException;
+import com.tradingEngine.stockTrade.model.RoleEntity;
 import com.tradingEngine.stockTrade.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -35,16 +40,17 @@ public class AuthService {
     private final JwtAuthUtils  jwtAuthUtils;
     private final RefreshTokenInternalService  refreshTokenInternalService;
     private final OAuth2HelperMethods  oAuth2HelperMethods;
-
+    private final RoleRepository roleRepository;
     public  AuthService(UserRepositoryJPA userRepositoryJPA, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
                         JwtAuthUtils jwtAuthUtils,RefreshTokenInternalService refreshTokenInternalService,
-                        OAuth2HelperMethods oAuth2HelperMethods) {
+                        OAuth2HelperMethods oAuth2HelperMethods,RoleRepository roleRepository) {
         this.userRepositoryJPA = userRepositoryJPA;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtAuthUtils = jwtAuthUtils;
         this.refreshTokenInternalService = refreshTokenInternalService;
         this.oAuth2HelperMethods = oAuth2HelperMethods;
+        this.roleRepository = roleRepository;
     }
 
     @Transactional
@@ -56,11 +62,15 @@ public class AuthService {
             throw new IllegalArgumentException("Duplicate Username ❌" + ActiveUsername);
         }
 
+        // fetch role
+        RoleEntity trader = roleRepository.findByRoleType(RoleType.TRADER)
+                .orElseThrow(() -> new RoleNotFoundException("That role not found at DB"));
 
         User user = User.builder()
                 .username(ActiveUsername)
                 .authenticationType(authenticationType)
                 .providerId(providerId)
+                .roles(Set.of(trader))  // set as trader
                 .cashBalance(BigDecimal.ZERO) // initial cashBalance Zero hai kyu Google se login ke time cash add nahi kr sakte isliye 
                 .userStatus(UserStatus.ACTIVE)
                 .reservedBalance(BigDecimal.ZERO)

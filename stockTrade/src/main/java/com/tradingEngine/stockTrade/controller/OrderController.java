@@ -25,6 +25,7 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    // user and admin
     @PostMapping("/buy")
     public ResponseEntity<String> buyOrder(@Valid @RequestBody OrderRequestDTO
                                                          orderRequestDTO){
@@ -35,6 +36,7 @@ public class OrderController {
         return ResponseEntity.ok("Buy Order Placed");
     }
 
+    // user and admin
     @PostMapping("/sell")
     public ResponseEntity<String> sellOrder(@RequestBody OrderRequestDTO
                                                         orderRequestDTO){
@@ -47,6 +49,7 @@ public class OrderController {
     }
 
 
+    // user and admin
     @DeleteMapping("/cancel/{orderId}")
     public ResponseEntity<String> cancelOrder(@PathVariable Long orderId,
                                               @RequestParam Long userId){
@@ -57,6 +60,7 @@ public class OrderController {
     }
 
 
+    // user and admin
     @PatchMapping("/{orderId}")
     public ResponseEntity<String> modifyOrder(@PathVariable Long orderId,
                                               @RequestParam Long userId,
@@ -67,6 +71,7 @@ public class OrderController {
     }
 
 
+    // user and admin
     @GetMapping("/open")
     public ResponseEntity<List<OpenOrderResponseDTO>> getOpenOrder(@RequestParam Long userId){
 
@@ -79,6 +84,7 @@ public class OrderController {
                 .body(orders);
     }
 
+    // user and admin
     @GetMapping("/orderInfo")
     public ResponseEntity<PageResponse<OpenOrderResponseDTO>> getOpenOrders(@RequestParam(defaultValue = "0") int page,
                                                                             @RequestParam(defaultValue = "10") int pageSize){

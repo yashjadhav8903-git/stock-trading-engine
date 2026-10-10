@@ -19,17 +19,20 @@ public class UserController {
     private final UserService userService;
     private final OrderService orderService;
 
+    // admin
     @PostMapping("addCash/{userId}")
     public ResponseEntity<String> addUserCash(@PathVariable Long userId, @RequestParam BigDecimal cashAmount) {
         userService.addCash(userId,cashAmount);
         return ResponseEntity.ok().body("Cash balance added successfully.");
     }
 
+    // user
     @GetMapping
     public ResponseEntity<List<OpenOrderResponseDTO>> getOpenOrderResponseByUserId(@RequestParam Long userId){
         return ResponseEntity.ok(orderService.getOpenOrderResponseByUserId(userId));
     }
 
+    // admin
     @PostMapping("/status/{userId}")
     public ResponseEntity<String> updateUserStatus(@PathVariable Long userId, @RequestParam String userStatus){
         userService.UpdateUserStatus(userId,userStatus);

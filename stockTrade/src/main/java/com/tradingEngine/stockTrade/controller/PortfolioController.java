@@ -21,14 +21,10 @@ public class PortfolioController {
         this.portfolioService = portfolioService;
     }
 
+    // user and admin
     @GetMapping
     public ResponseEntity<List<PortfolioResponseDTO>> getPortfolio(@RequestParam Long userId) {
-
-        List<PortfolioResponseDTO> userPortfolio =
-                portfolioService.getUserPortfolio(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(userPortfolio);
+        List<PortfolioResponseDTO> userPortfolio = portfolioService.getUserPortfolio(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(userPortfolio);
     }   
 }

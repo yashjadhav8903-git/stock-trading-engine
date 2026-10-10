@@ -10,6 +10,8 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    // Connection Establishment
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // 1. In-Memory message broker

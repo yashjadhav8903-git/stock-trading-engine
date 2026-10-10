@@ -22,24 +22,28 @@ public class StockController {
         this.stockService = stockService;
     }
 
+    // user
     @GetMapping("/price")
     public ResponseEntity<CurrentPriceResponseDTO> getCurrentPrice(@RequestParam String symbol){
         CurrentPriceResponseDTO price = stockService.getPrice(symbol);
         return ResponseEntity.ok(price);
     }
 
+    // user
     @GetMapping("/info")
     public ResponseEntity<Stock> getStockInfo(@RequestParam String symbol){
         Stock stockInfo = stockService.getStockInfo(symbol);
         return ResponseEntity.ok(stockInfo);
     }
 
+    // admin
     @PostMapping("/list")
     public ResponseEntity<String> listStocks(@Valid @RequestBody StockListingDTO listingDTO){
         stockService.listNewStockToMarketAsIPO(listingDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body("Stock has been listed and IPO launched successfully in Sell OrderBook ✅");
     }
 
+    // user and admin
     @GetMapping
     public ResponseEntity<PageResponse<Stock>> getStocks(@RequestParam(defaultValue = "0") int page,
                                                          @RequestParam(defaultValue = "5") int pageSize){

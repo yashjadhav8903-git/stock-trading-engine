@@ -26,6 +26,7 @@ public class TradeController {
         this.tradeService = tradeService;
     }
 
+    // admin
     @GetMapping("/record")
     public ResponseEntity<List<TradeResponseDTO>> getTradeRecord(){
 
@@ -36,6 +37,7 @@ public class TradeController {
                 .body(trades);
     }
 
+    // admin
     @GetMapping("/stats")
     public ResponseEntity<TradeStatsDTO> getTradeStats(){
         log.info("Stats-Request come to Controller");
@@ -44,6 +46,7 @@ public class TradeController {
                 HttpStatus.OK);
     }
 
+    // user
     @GetMapping("/history")
     public ResponseEntity<List<TradeResponseDTO>> getHistoryByUserId(@RequestParam Long userId){
         log.info("History-Request come to Controller {} ", userId);

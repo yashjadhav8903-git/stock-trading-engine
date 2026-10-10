@@ -33,6 +33,7 @@ public class TradeStatsController {
         return ResponseEntity.ok(tradeStatsCountDTO);
     }
 
+    // user
     @GetMapping("/avg-price")
     public ResponseEntity<TradeStatsAvgDTO> getTradeStatsAvgDTO() {
         TradeStatsAvgDTO tradeStatsAvgDTO =
@@ -40,6 +41,7 @@ public class TradeStatsController {
         return ResponseEntity.ok(tradeStatsAvgDTO);
     }
 
+    // user
     @GetMapping("/top-stock")
     public ResponseEntity<String> getTopTrade() {
         String topTradedStock =

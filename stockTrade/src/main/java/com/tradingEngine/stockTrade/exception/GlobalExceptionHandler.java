@@ -190,6 +190,22 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleRoleNotFound(RoleNotFoundException ex,
+                                                                        HttpServletRequest request) {
+
+        ExceptionResponse errorResponse = new ExceptionResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+    }
+
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<ExceptionResponse> handleExpiredJwtException(ExpiredJwtException ex,
                                                                            HttpServletRequest request){
@@ -267,30 +283,6 @@ public class GlobalExceptionHandler {
 
     }
 
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ExceptionResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex,
-                                                                                                HttpServletRequest request){
-
-        log.error("Exception Request belongs to MethodArgumentNotValidException : {}", ex.getMessage());
-
-        Map<String,String> fieldError = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach( error -> fieldError.put(error.getField(),
-                        error.getDefaultMessage()));
-
-        ExceptionResponse exceptionErrorRsponse = new ExceptionResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Required Field Validation Error." + ex.getMessage(),
-                request.getRequestURI()
-
-        );
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(exceptionErrorRsponse);
-    }
 
     @ExceptionHandler(OAuth2AuthorizationException.class)
     public ResponseEntity<ExceptionResponse> handleOAuth2AuthorizationException(OAuth2AuthorizationException oAuth2AuthorizationException,
