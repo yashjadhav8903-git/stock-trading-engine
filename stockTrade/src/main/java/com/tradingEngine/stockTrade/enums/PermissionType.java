@@ -9,6 +9,7 @@ public enum PermissionType {
 
     ORDER_CREATE("Order:Create"),
     ORDER_MODIFY("Order:Modify"),
+    AUDIT_VIEW("Audit:View"),
     ORDER_CANCEL("Order:Cancel"),
     ORDER_READ("Order:Read"),
     PORTFOLIO_READ("Portfolio:Read"),
@@ -18,6 +19,7 @@ public enum PermissionType {
     ACCOUNT_LOCK("Account:Lock"),
     TRADE_CASH("Trade:Cash"),
     TRADE_VIEW("Trade:View");
+
 
     private final String permission;
 }

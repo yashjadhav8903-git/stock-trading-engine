@@ -45,6 +45,7 @@ public class RoleInitializer implements CommandLineRunner {
                 PermissionType.TRADE_READ,
                 PermissionType.STOCK_LIST,
                 PermissionType.TRADE_CASH,
+                PermissionType.AUDIT_VIEW,
                 PermissionType.TRADE_VIEW
         );
 
@@ -62,6 +63,7 @@ public class RoleInitializer implements CommandLineRunner {
         Set<PermissionEntity> SystemPermission = getPermissions(
                 PermissionType.STOCK_LIST,
                 PermissionType.ORDER_MODIFY,
+                PermissionType.AUDIT_VIEW,
                 PermissionType.ACCOUNT_LOCK,
                 PermissionType.TRADE_CASH,
                 PermissionType.TRADE_VIEW,
