@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class OrderController {
     }
 
     // user and admin
+    @PreAuthorize("hasAuthority('Order:Create') or #orderRequestDTO.userId == authentication.principal.id")
     @PostMapping("/buy")
     public ResponseEntity<String> buyOrder(@Valid @RequestBody OrderRequestDTO
                                                          orderRequestDTO){
@@ -37,6 +39,7 @@ public class OrderController {
     }
 
     // user and admin
+    @PreAuthorize("hasAuthority('Order:Create') or #orderRequestDTO.userId == authentication.principal.id")
     @PostMapping("/sell")
     public ResponseEntity<String> sellOrder(@RequestBody OrderRequestDTO
                                                         orderRequestDTO){
@@ -50,6 +53,7 @@ public class OrderController {
 
 
     // user and admin
+    @PreAuthorize("hasAuthority('Order:Cancel') or #userId == authentication.principal.id")
     @DeleteMapping("/cancel/{orderId}")
     public ResponseEntity<String> cancelOrder(@PathVariable Long orderId,
                                               @RequestParam Long userId){
@@ -61,6 +65,7 @@ public class OrderController {
 
 
     // user and admin
+    @PreAuthorize("hasAuthority('Order:Modify') or #userId == authentication.principal.id")
     @PatchMapping("/{orderId}")
     public ResponseEntity<String> modifyOrder(@PathVariable Long orderId,
                                               @RequestParam Long userId,
@@ -72,6 +77,7 @@ public class OrderController {
 
 
     // user and admin
+    @PreAuthorize("hasAuthority('Order:Read') or #userId == authentication.principal.id")
     @GetMapping("/open")
     public ResponseEntity<List<OpenOrderResponseDTO>> getOpenOrder(@RequestParam Long userId){
 
@@ -86,6 +92,7 @@ public class OrderController {
 
     // user and admin
     @GetMapping("/orderInfo")
+    @PreAuthorize("hasAuthority('Order:Read')")
     public ResponseEntity<PageResponse<OpenOrderResponseDTO>> getOpenOrders(@RequestParam(defaultValue = "0") int page,
                                                                             @RequestParam(defaultValue = "10") int pageSize){
         PageResponse<OpenOrderResponseDTO> ordersInfo = orderService.findOrdersInfo(page, pageSize);

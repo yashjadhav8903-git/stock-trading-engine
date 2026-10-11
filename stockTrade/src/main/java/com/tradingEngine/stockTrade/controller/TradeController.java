@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,9 +28,9 @@ public class TradeController {
     }
 
     // admin
+    @PreAuthorize("hasAuthority('Trade:View')")
     @GetMapping("/record")
     public ResponseEntity<List<TradeResponseDTO>> getTradeRecord(){
-
         log.info("Record-Request come to Controller");
         List<TradeResponseDTO> trades = tradeService.getTrades();
         return ResponseEntity
@@ -38,6 +39,7 @@ public class TradeController {
     }
 
     // admin
+    @PreAuthorize("hasAuthority('Trade:View')")
     @GetMapping("/stats")
     public ResponseEntity<TradeStatsDTO> getTradeStats(){
         log.info("Stats-Request come to Controller");
@@ -47,6 +49,7 @@ public class TradeController {
     }
 
     // user
+    @PreAuthorize("hasAuthority('Trade:Read') or #userId == authentication.principal.id")
     @GetMapping("/history")
     public ResponseEntity<List<TradeResponseDTO>> getHistoryByUserId(@RequestParam Long userId){
         log.info("History-Request come to Controller {} ", userId);

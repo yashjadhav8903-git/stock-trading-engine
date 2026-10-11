@@ -10,6 +10,7 @@ import com.tradingEngine.stockTrade.service.StockService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +24,7 @@ public class StockController {
     }
 
     // user
+    @PreAuthorize("hasAuthority('Stock:View')")
     @GetMapping("/price")
     public ResponseEntity<CurrentPriceResponseDTO> getCurrentPrice(@RequestParam String symbol){
         CurrentPriceResponseDTO price = stockService.getPrice(symbol);
@@ -30,6 +32,7 @@ public class StockController {
     }
 
     // user
+    @PreAuthorize("hasAuthority('Stock:View')")
     @GetMapping("/info")
     public ResponseEntity<Stock> getStockInfo(@RequestParam String symbol){
         Stock stockInfo = stockService.getStockInfo(symbol);
@@ -37,6 +40,7 @@ public class StockController {
     }
 
     // admin
+    @PreAuthorize("hasAuthority('Stock:List')")
     @PostMapping("/list")
     public ResponseEntity<String> listStocks(@Valid @RequestBody StockListingDTO listingDTO){
         stockService.listNewStockToMarketAsIPO(listingDTO);
@@ -44,6 +48,7 @@ public class StockController {
     }
 
     // user and admin
+    @PreAuthorize("hasAuthority('Stock:View')")
     @GetMapping
     public ResponseEntity<PageResponse<Stock>> getStocks(@RequestParam(defaultValue = "0") int page,
                                                          @RequestParam(defaultValue = "5") int pageSize){

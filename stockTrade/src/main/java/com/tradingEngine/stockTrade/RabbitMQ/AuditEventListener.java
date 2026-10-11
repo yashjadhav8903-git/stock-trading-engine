@@ -24,6 +24,7 @@ public class AuditEventListener {
         // Event DTO se Entity mapper aur DB save
         AuditLog auditLog = AuditLog.builder()
                 .action(event.getAction())
+                .actor(event.getActor())
                 .methodName(event.getMethodName())
                 .status(event.getStatus())
                 .ipAddress(event.getIpAddress())

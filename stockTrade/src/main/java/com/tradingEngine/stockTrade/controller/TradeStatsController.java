@@ -5,6 +5,7 @@ import com.tradingEngine.stockTrade.DTOs.TradeStatsDTOs.TradeStatsAvgDTO;
 import com.tradingEngine.stockTrade.DTOs.TradeStatsDTOs.TradeStatsCountDTO;
 import com.tradingEngine.stockTrade.service.TradeStatsService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ public class TradeStatsController {
     }
 
     @GetMapping("/trade-data")
+    @PreAuthorize("hasAuthority('Trade:View')")
     public ResponseEntity<TradeStateRepositoryDTO> getData(){
         TradeStateRepositoryDTO tradeStateRepository =
                 tradeStatsService.getTradeStateRepository();
@@ -27,6 +29,7 @@ public class TradeStatsController {
     }
 
     @GetMapping("/trade-count")
+    @PreAuthorize("hasAuthority('Trade:View')")
     public ResponseEntity<TradeStatsCountDTO> getTradeStatsCountDTO() {
         TradeStatsCountDTO tradeStatsCountDTO =
                 tradeStatsService.getTradeStatsCountDTO();
@@ -35,6 +38,7 @@ public class TradeStatsController {
 
     // user
     @GetMapping("/avg-price")
+    @PreAuthorize("hasAuthority('Trade:Read')")
     public ResponseEntity<TradeStatsAvgDTO> getTradeStatsAvgDTO() {
         TradeStatsAvgDTO tradeStatsAvgDTO =
                 tradeStatsService.getTradeStatsAvgDTO();
@@ -43,6 +47,7 @@ public class TradeStatsController {
 
     // user
     @GetMapping("/top-stock")
+    @PreAuthorize("hasAuthority('Trade:Read')")
     public ResponseEntity<String> getTopTrade() {
         String topTradedStock =
                 tradeStatsService.getTopTradedStock();

@@ -11,6 +11,7 @@ import com.tradingEngine.stockTrade.matchingEngine.MatchingLogic;
 import com.tradingEngine.stockTrade.model.Stock;
 import com.tradingEngine.stockTrade.repository.StockRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +30,19 @@ public class StockService {
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAuthority('Stock:View')")
     public CurrentPriceResponseDTO getPrice(String symbol) {
         return stockRepository.getStockCurrentPrice(symbol);
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAuthority('Stock:View')")
     public Stock getStockInfo(String symbol) {
         return stockRepository.findBySymbol(symbol);
     }
 
     @Transactional
+    @PreAuthorize("hasAuthority('Stock:List')")
     public void  listNewStockToMarketAsIPO(StockListingDTO  stockListingDTO) {
 
         if (stockListingDTO.getCompanyName() == null || stockListingDTO.getCompanyName().isBlank()) {
@@ -76,6 +80,7 @@ public class StockService {
 
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAuthority('Stock:View')")
     public PageResponse<Stock> getStockEntireData(Integer page, Integer pageSize){
         return stockRepository.getStockPage(page, pageSize);
     }

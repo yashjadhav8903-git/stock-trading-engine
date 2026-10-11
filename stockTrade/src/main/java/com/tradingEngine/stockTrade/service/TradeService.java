@@ -5,6 +5,7 @@ import com.tradingEngine.stockTrade.DTOs.TradeDTOs.TradeStatsDTO;
 import com.tradingEngine.stockTrade.model.Trade;
 import com.tradingEngine.stockTrade.repository.TradeRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class TradeService {
 
     @Cacheable(value = "tradeRecord", key = "'record'")
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAuthority('Trade:View')")
     public TradeStatsDTO getTradeFromDB() {
         return tradeRepository.getTradeStats();
     }
@@ -35,6 +37,7 @@ public class TradeService {
     // return
     @Cacheable(value = "globalTrades", key = "'recent'")
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAuthority('Trade:View')")
     public List<TradeResponseDTO> getTrades() {
         return tradeRepository.getTrade()
                 .stream()
@@ -59,6 +62,7 @@ public class TradeService {
     // get user trade History by user id
     @Cacheable(value = "userTrades", key = "#userId")
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAuthority('Trade:Read') or #userId == authentication.principal.id")
     public List<TradeResponseDTO> getByUserId(Long userId) {
        return tradeRepository.getByUserId(userId)
                .stream()

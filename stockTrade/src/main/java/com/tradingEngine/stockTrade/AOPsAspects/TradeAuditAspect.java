@@ -10,6 +10,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -36,6 +38,10 @@ public class TradeAuditAspect {
         String ipAddress = request.getRemoteAddr();
         Object result;
 
+        // username
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = (auth != null) ? auth.getName() : "ANONYMOUS";
+
         try{
 
             result = joinPoint.proceed();
@@ -53,6 +59,7 @@ public class TradeAuditAspect {
 
             TradeAuditEvent auditEvent = TradeAuditEvent.builder()
                     .action(auditTradeLog.action())
+                    .actor(username)
                     .methodName(method)
                     .status(status)
                     .message(message)

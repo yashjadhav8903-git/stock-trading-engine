@@ -20,6 +20,7 @@ public class AuditLog {
     private Long id;
 
     private String action;
+    private String actor;
     private String methodName;
     private String status;
     private String ipAddress;

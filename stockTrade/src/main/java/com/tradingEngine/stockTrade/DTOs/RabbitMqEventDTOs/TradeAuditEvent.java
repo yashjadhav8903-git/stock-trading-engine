@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class TradeAuditEvent {
 
     private String action;
+    private String actor;
     private String methodName;
     private String status;
     private String ipAddress;

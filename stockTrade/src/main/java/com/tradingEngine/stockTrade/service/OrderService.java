@@ -25,6 +25,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,12 +71,14 @@ public class OrderService {
 
     @AuditTradeLog(action = "BUY_ORDER")
     @CircuitBreaker(name = "dbOperationService",fallbackMethod = "placeOrderFallback")
+    @PreAuthorize("hasAuthority('Order:Create') or #orderRequestDTO.userId == authentication.principal.id")
     public void placeBuyOrder(OrderRequestDTO orderRequestDTO){
             OrderPlacement(orderRequestDTO, OrderType.BUY);
     }
 
     @AuditTradeLog(action = "SELL_ORDER")
     @CircuitBreaker(name = "dbOperationService",fallbackMethod = "placeOrderFallback")
+    @PreAuthorize("hasAuthority('Order:Create') or #orderRequestDTO.userId == authentication.principal.id")
     public void placeSellOrder(OrderRequestDTO orderRequestDTO){
         OrderPlacement(orderRequestDTO, OrderType.SELL);
     }
@@ -213,6 +216,7 @@ public class OrderService {
     // remove order
     @Transactional
     @AuditTradeLog(action = "CANCEL_ORDER")
+    @PreAuthorize("hasAuthority('Order:Cancel') or #userId == authentication.principal.id")
     public void cancelOrder(Long orderId,Long userId){
 
         // 1. Database se Order fetch karein
@@ -272,6 +276,7 @@ public class OrderService {
 
     @Transactional
     @AuditTradeLog(action = "MODIFY_ORDER")
+    @PreAuthorize("hasAuthority('Order:Modify') or #userId == authentication.principal.id")
     public void modifyOrder(Long orderId, Long userId, OrderModifyRequestDTO orderModifyRequestDTO){
 
         // 1. Fetch Order
@@ -384,6 +389,7 @@ public class OrderService {
     @Cacheable(value = "userOrders", key = "#userId")
     @Transactional(readOnly = true)
     @CircuitBreaker(name = "dbOperationService", fallbackMethod = "getOrdersFallback")
+    @PreAuthorize("hasAuthority('Order:Read') or #userId == authentication.principal.id")
     public List<OpenOrderResponseDTO> getOrders(Long userId){
 
         log.info("OrderService -- Getting OpenOrders for UserId : {}", userId);
@@ -419,6 +425,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     @CircuitBreaker(name = "dbOperationService", fallbackMethod = "getOrdersFallback")
+    @PreAuthorize("hasAuthority('Order:Read')")
     public PageResponse<OpenOrderResponseDTO> findOrdersInfo(Integer page, Integer pageSize){
         return orderRepository.findOrdersInfo(page, pageSize);
     }
@@ -426,6 +433,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     @Cacheable(value = "OpenOrderInfoByUserId", key = "#userId")
     @CircuitBreaker(name = "dbOperationService", fallbackMethod = "getOrdersFallback")
+    @PreAuthorize("hasAuthority('Order:Read') or #userId == authentication.principal.id")
     public List<OpenOrderResponseDTO> getOpenOrderResponseByUserId(Long userId){
         return orderRepository.getOpenOrderResponseByUserId(userId)
                 .stream()

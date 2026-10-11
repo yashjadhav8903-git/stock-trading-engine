@@ -3,6 +3,7 @@ package com.tradingEngine.stockTrade.service;
 import com.tradingEngine.stockTrade.enums.UserStatus;
 import com.tradingEngine.stockTrade.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional
+    @PreAuthorize("hasAuthority('Trade:Cash') or #userId == authentication.principal.id")
     public void addCash(Long userId, BigDecimal cashAmount){
         if(cashAmount == null || cashAmount.compareTo(BigDecimal.ZERO)<=0){
             throw new IllegalArgumentException("Amount must be positive");
@@ -30,6 +32,7 @@ public class UserService {
 
 
     @Transactional
+    @PreAuthorize("hasAuthority('Account:Lock')")
     public void UpdateUserStatus(Long userId, String statusInput){
         if(statusInput == null || statusInput.trim().isEmpty()){
             throw new IllegalArgumentException("Status input cannot be null or empty");

@@ -38,8 +38,10 @@ public class RoleInitializer implements CommandLineRunner {
                 PermissionType.ORDER_CREATE,
                 PermissionType.ACCOUNT_LOCK,
                 PermissionType.ORDER_MODIFY,
+                PermissionType.ORDER_READ,
                 PermissionType.ORDER_CANCEL,
                 PermissionType.PORTFOLIO_READ,
+                PermissionType.STOCK_VIEW,
                 PermissionType.TRADE_READ,
                 PermissionType.STOCK_LIST,
                 PermissionType.TRADE_CASH,
@@ -50,15 +52,20 @@ public class RoleInitializer implements CommandLineRunner {
                 PermissionType.ORDER_CREATE,
                 PermissionType.ORDER_MODIFY,
                 PermissionType.ORDER_CANCEL,
+                PermissionType.ORDER_READ,
+                PermissionType.TRADE_CASH,
+                PermissionType.STOCK_VIEW,
                 PermissionType.PORTFOLIO_READ,
                 PermissionType.TRADE_READ
         );
 
         Set<PermissionEntity> SystemPermission = getPermissions(
                 PermissionType.STOCK_LIST,
+                PermissionType.ORDER_MODIFY,
                 PermissionType.ACCOUNT_LOCK,
                 PermissionType.TRADE_CASH,
-                PermissionType.TRADE_VIEW
+                PermissionType.TRADE_VIEW,
+                PermissionType.STOCK_VIEW
 
         );
 

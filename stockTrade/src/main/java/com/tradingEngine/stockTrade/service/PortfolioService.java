@@ -5,6 +5,7 @@ import com.tradingEngine.stockTrade.model.Holding;
 import com.tradingEngine.stockTrade.model.Stock;
 import com.tradingEngine.stockTrade.repository.HoldingRepository;
 import com.tradingEngine.stockTrade.repository.StockRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ public class PortfolioService {
         this.stockRepository = stockRepository;
     }
 
+    @PreAuthorize("hasAuthority('Portfolio:Read') or #userId == authentication.principal.id")
     public List<PortfolioResponseDTO> getUserPortfolio(Long userId) {
         List<Holding> holdings = holdingRepository.findByUserId(userId);
 
